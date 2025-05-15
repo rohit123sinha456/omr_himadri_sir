@@ -1,3 +1,5 @@
+import math
+
 import cv2
 import numpy as np
 import random
@@ -133,10 +135,16 @@ if process_grop == 1:
     for y_group in y_groups:
         x_groups = group_by_x_with_mean_threshold(y_group)
         final_groups.extend(x_groups)
+    row = len(y_groups)
+    cols = len(x_groups)
 else:
+    y_groups = 1
     x_groups = group_by_x_with_threshold(filtered_circles)
     final_groups  = x_groups
+    row = len(x_groups)
+    cols = 1
 
+print(row,cols)
 # Assign random colors to groups and annotate
 for group in final_groups:
     color = [random.randint(0, 255) for _ in range(3)]
@@ -145,6 +153,7 @@ for group in final_groups:
         cv2.circle(output, (x, y), r, color, 2)
         cv2.putText(output, str(count), (x - r, y - r), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
 
+print(len(final_groups))
 for i in range(len(final_groups)):
     if process_grop == 1:
         final_groups[i] = sorted(final_groups[i], key=lambda c: c[0])  # sort by x
@@ -152,17 +161,15 @@ for i in range(len(final_groups)):
         final_groups[i] = sorted(final_groups[i], key=lambda c: c[1])  # sort by y
 
 zz = black_pixel_presence_by_index(image, final_groups, threshold=50)
-flag = 1
+answer = {}
 for index,i in enumerate(zz):
-    if process_grop == 1:
-        if (index+1) % 5 == 0:
-            flag+=1
-        qno = (index*10) + flag
-    else:
-        if (index+1) % 11 == 0:
-            flag+=1
-        qno = (index*10) + flag
-    print(f"Question {qno} - answer {i}")
+    ith_row = math.floor(index / cols)
+    jth_col = index % cols
+    qno = (jth_col * row) + ith_row
+    answer[qno + 1] = i
+
+sorted_dict = dict(sorted(answer.items()))
+print(sorted_dict)
 # Save the final result
 cv2.imwrite("result_grouped.jpg", output)
 print(f"Processed {len(filtered_circles)} circles into {len(final_groups)} final groups.")
